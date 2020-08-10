@@ -43,8 +43,13 @@ const resolvers = {
             return result.body;
         },
         dragons: async () => {
-            // TODO: Implement this resolver
-            return null;
+            try {
+                const {body:dragons = []} = await getJSON(`${SXAPI_BASE_URL}/dragons/`);
+                return dragons;
+            } catch (err) {
+                console.log(err.message);
+                return [];
+            }
         }
     }
 };
