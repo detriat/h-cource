@@ -1,13 +1,10 @@
 import Koa from 'koa';
-import Apollo from 'apollo-server-koa';
-import p from 'phin';
+import Apollo from 'apollo-server-koa'
+
+import SpaceXAPI from './sources/SpaceXAPI.js';
 
 const { ApolloServer, gql } = Apollo;
-
 const PORT = 5000;
-const SXAPI_BASE_URL = 'https://api.spacexdata.com/v3';
-
-const getJSON = p.defaults({ parse: 'json' })
 
 const typeDefs = gql`
     type Query {
@@ -37,25 +34,25 @@ const typeDefs = gql`
 
 const resolvers = {
     Query: {
-        dragon: async (_, { id }) => {
-            let result = await getJSON(`${SXAPI_BASE_URL}/dragons/${id}`);
-
-            return result.body;
+        dragon: async (_, { id }, {dataSources}) => {
+            return dataSources.spaceXAPI.getDragon(id);
         },
-        dragons: async () => {
-            try {
-                const {body:dragons = []} = await getJSON(`${SXAPI_BASE_URL}/dragons/`);
-                return dragons;
-            } catch (err) {
-                console.log(err.message);
-                return [];
-            }
+        dragons: async (_source, _args, {dataSources}) => {
+            return dataSources.spaceXAPI.getDragons();
         }
     }
 };
 
 const app = new Koa();
-const server = new ApolloServer({ typeDefs, resolvers });
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    dataSources: () => {
+        return {
+            spaceXAPI: new SpaceXAPI()
+        };
+    }
+});
 
 app
     .use(server.getMiddleware())
